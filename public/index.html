@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="javascript/nipplejs/dist/nipplejs.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.9.1/firebase.js"></script>
+    <script>
+        var config = {
+            apiKey: "apiKey",
+            authDomain: "projectId.firebaseapp.com",
+            databaseURL: "https://databaseName.firebaseio.com",
+            storageBucket: "bucket.appspot.com"
+        };
+        firebase.initializeApp(config);
+
+        let nipple, x, y, d, esquerda, direita;
+        firebase.database().ref('posição').on('value', function(snapshot){
+            x = snapshot.val().X;
+            y = snapshot.val().Y;
+        });
+        function carrega(){
+            nipple = nipplejs.create({
+                zone: document.getElementById('static'),
+                mode: 'static',
+                position: {left: '50%', top: '50%'},
+                color: 'black', 
+                size: 250
+            });
+            nipple.on('dir:up', 
+                () => {
+                    clearInterval(esquerda); clearInterval(direita); 
+                    if(y == 1){
+                        d = "cima";
+                        y = 0;
+                        firebase.database().ref('posição').set({X:x, Y: y, C:"antihero", D:d});
+                    };
+                }
+            );
+            nipple.on('dir:down', 
+                () => {
+                    clearInterval(esquerda); clearInterval(direita); 
+                    if(y == 0){
+                        d = "baixo";
+                        y = 1;
+                        firebase.database().ref('posição').set({X:x, Y: y, C:"antihero", D:d});
+                    };
+                }
+            );
+            nipple.on('dir:left',
+                () => {
+                    clearInterval(direita);
+                    esquerda = setInterval(
+                        () => {
+                            if(0 < x){
+                                d = "esquerda";
+                                x--;
+                                firebase.database().ref('posição').set({X:x, Y: y, C:"antihero", D:d});
+                            }else{
+                                clearInterval(esquerda);
+                            }
+                        }, 300)
+                }
+            );
+            nipple.on('dir:right',
+                () => {
+                    clearInterval(esquerda);
+                    direita = setInterval(
+                        () => {
+                            if(x < 15){
+                                d = "direita";
+                                x++;
+                                firebase.database().ref('posição').set({X:x, Y: y, C:"antihero", D:d});
+                            }else{
+                                clearInterval(direita);
+                            }
+                        }, 300)
+                }
+            );
+            nipple.on('end', () => {
+                clearInterval(esquerda); clearInterval(direita); 
+                firebase.database().ref('posição').set({X:x, Y: y, C:"antihero", D:"parado"})
+            });
+        }        
+    </script>
+    <style>
+        body{
+            margin: 0;
+        }
+        #static{
+            height: 100vh;
+            margin: 0;
+            background-color: rgb(255, 136, 0);
+        }
+    </style>
+    <title>App</title>
+</head>
+<body onload="carrega()">
+    <div id='static'></div>
+</body>
+</html>
